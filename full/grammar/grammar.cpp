@@ -8,13 +8,17 @@ void statement_collector::add_statement(statement const *stat) {
     }
 }
 
-void statement_collector::print_all() {
+void statement_collector::print_all(print_policy const &policy) {
     std::sort(_actual_proof.begin(), _actual_proof.end(), [](statement const *l, statement const *r) {
         return l->get_id() < r->get_id();
     });
     for (size_t i = 0; i < _actual_proof.size(); i++) {
         _actual_proof[i]->set_id(i + 1);
-        _actual_proof[i]->print();
+        if (policy == print_policy::MARKED) {
+            _actual_proof[i]->print();
+        } else {
+            _actual_proof[i]->get_expression()->print("\n");
+        }
     }
 }
 
@@ -126,7 +130,7 @@ std::string bi_expression::to_prefix() const {
 }
 
 std::string bi_expression::to_infix() const {
-    return '(' + _left->to_infix() + _s.to_string() + _right->to_infix() + ')';
+    return '(' + _left->to_infix() + " " + _s.to_string() + " " + _right->to_infix() + ')';
 }
 
 implication::implication(e_ptr const &left, e_ptr const &right) :
@@ -217,8 +221,8 @@ void head::set_result(e_ptr const &expr) {
 }
 
 void head::print_all() const {
-    for (auto const &expr : _context) {
-        expr->print(", ");
+    for (unsigned int i = 0; i < _context.size(); i++) {
+        _context[i]->print(i == _context.size() - 1 ? "" : ", ");
     }
     std::cout << " |- ";
     _result->print();
@@ -234,6 +238,10 @@ e_ptr head::operator[](unsigned int i) const {
 
 e_ptr const &head::get_result() const {
     return _result;
+}
+
+unsigned int head::length() const {
+    return _context.size();
 }
 
 statement::statement(e_ptr const &expr, unsigned int id)
@@ -271,6 +279,10 @@ char hypothesis::get_type() const {
     return 'h';
 }
 
+unsigned int hypothesis::get_number() const {
+    return _number;
+}
+
 axiom::axiom(e_ptr const &expr, unsigned int id, unsigned int number) :
     statement(expr, id), _number(number) {}
 
@@ -285,6 +297,10 @@ void axiom::walk(statement_collector &collector) {
 
 char axiom::get_type() const {
     return 'a';
+}
+
+unsigned int axiom::get_number() const {
+    return _number;
 }
 
 modus_ponens::modus_ponens(e_ptr const &expr, unsigned int id,
@@ -349,7 +365,7 @@ unsigned int proof::length() const {
     return _statements.size();
 }
 
-unsigned int proof::find_hypothesis(e_ptr const &expr) {
+unsigned int proof::find_hypothesis(e_ptr const &expr) const {
     for (size_t i = 0; i < _context.size(); i++) {
         if (_context[i]->equals(expr)) {
             return i + 1;
@@ -358,14 +374,14 @@ unsigned int proof::find_hypothesis(e_ptr const &expr) {
     return 0;
 }
 
-std::pair<unsigned int, unsigned int> proof::find_modus_ponens(e_ptr const &expr) {
+std::pair<unsigned int, unsigned int> proof::find_modus_ponens(e_ptr const &expr) const {
 #ifndef SLOW
     auto const &outer_key = hashable_expression(expr);
-    for (unsigned int idx : _mp_imp[outer_key]) {
+    for (unsigned int idx : _mp_imp.at(outer_key)) {
         implication *imp = i_cast(_statements[idx]->get_expression());
         auto const &key = hashable_expression(imp->get_left());
         if (_exists.count(key)) {
-            return {_exists[key] + 1, idx + 1};
+            return {_exists.at(key) + 1, idx + 1};
         }
     }
 #else

@@ -6,5 +6,5 @@ full/executable/
 cmake-build-*
 
 *.zip
-input.txt
-output.txt
+_input.txt
+_output.txt

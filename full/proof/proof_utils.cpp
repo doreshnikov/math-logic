@@ -1,9 +1,9 @@
 #include "proof_utils.hpp"
 #include "../parser/parser.hpp"
 
-proof_splitter::proof_splitter() {}
+proof_scanner::proof_scanner() {}
 
-s_ptr proof_splitter::parse_proof() {
+s_ptr proof_scanner::parse_proof() {
     parse_head();
     unsigned int line_number = 0;
     while (std::cin) {
@@ -34,7 +34,7 @@ s_ptr proof_splitter::parse_proof() {
     return _proof.get_root();
 }
 
-unsigned int proof_splitter::is_axiom(e_ptr const &expr) {
+unsigned int proof_scanner::is_axiom(e_ptr const &expr) {
     if (expr->get_type() != 'i') {
         return 0;
     } else {
@@ -102,12 +102,12 @@ unsigned int proof_splitter::is_axiom(e_ptr const &expr) {
     return 0;
 }
 
-void proof_splitter::parse_head() {
+void proof_scanner::parse_head() {
     get_line();
     _proof.set_head(parser(_line).parse_context());
 }
 
-void proof_splitter::get_line() {
+void proof_scanner::get_line() {
     char c;
     _line = "";
     while (std::cin.get(c)) {
@@ -118,15 +118,19 @@ void proof_splitter::get_line() {
     }
 }
 
-head const &proof_splitter::get_head() {
+head const &proof_scanner::get_head() const {
     return _proof.get_head();
 }
 
-proof_builder::proof_builder(head const &context, s_ptr const &root) : _context(context), _root(root) {}
+proof const &proof_scanner::get_proof() const {
+    return _proof;
+}
 
-void proof_builder::print() {
+proof_printer::proof_printer(head const &context, s_ptr const &root) : _context(context), _root(root) {}
+
+void proof_printer::print(print_policy const &policy) const {
     _context.print_all();
     statement_collector collector;
     _root->walk(collector);
-    collector.print_all();
+    collector.print_all(policy);
 }

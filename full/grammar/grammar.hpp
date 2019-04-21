@@ -180,11 +180,11 @@ public:
     void set_result(e_ptr const &);
 
     void print_all() const;
+    unsigned int length() const;
 
     unsigned int size() const;
     e_ptr operator[](unsigned int) const;
     e_ptr const &get_result() const;
-    std::string const &get_line() const;
 
 private:
     std::vector<e_ptr> _context;
@@ -197,10 +197,15 @@ typedef std::shared_ptr<statement> s_ptr;
 
 class statement_collector {
 public:
-    statement_collector() = default;
+    enum class print_policy {
+        MARKED,
+        UNMARKED
+    };
 
+    statement_collector() = default;
     void add_statement(statement const *);
-    void print_all();
+
+    void print_all(print_policy const &);
 
 private:
     std::vector<statement const *> _actual_proof;
@@ -235,6 +240,8 @@ public:
     void walk(statement_collector &) override;
     char get_type() const override;
 
+    unsigned int get_number() const;
+
 private:
     unsigned int _number;
 };
@@ -247,6 +254,8 @@ public:
     void print() const override;
     void walk(statement_collector &) override;
     char get_type() const override;
+
+    unsigned int get_number() const;
 
 private:
     unsigned int _number;
@@ -269,7 +278,15 @@ private:
     s_ptr _right;
 };
 
-inline modus_ponens *mp_cast(s_ptr const stat) {
+inline hypothesis *h_cast(s_ptr const &stat) {
+    return reinterpret_cast<hypothesis *>(stat.get());
+}
+
+inline axiom *a_cast(s_ptr const &stat) {
+    return reinterpret_cast<axiom *>(stat.get());
+}
+
+inline modus_ponens *mp_cast(s_ptr const &stat) {
     return reinterpret_cast<modus_ponens *>(stat.get());
 }
 
@@ -307,8 +324,8 @@ public:
     head const &get_head() const;
     unsigned int length() const;
 
-    unsigned int find_hypothesis(e_ptr const &);
-    std::pair<unsigned int, unsigned int> find_modus_ponens(e_ptr const &expr);
+    unsigned int find_hypothesis(e_ptr const &) const;
+    std::pair<unsigned int, unsigned int> find_modus_ponens(e_ptr const &expr) const;
 
 private:
     head _context;

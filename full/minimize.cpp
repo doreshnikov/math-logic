@@ -10,13 +10,15 @@ int main() {
     cout.tie(nullptr);
 
 #ifdef LOCAL
-    freopen("input.txt", "r", stdin);
+    freopen("_input.txt", "r", stdin);
+    freopen("_output.txt", "w", stdout);
 #endif
 
-    proof_splitter splitter;
+    proof_scanner splitter;
     try {
-        proof_builder builder(splitter.get_head(), splitter.parse_proof());
-        builder.print();
+        splitter.parse_proof();
+        proof_printer builder(splitter.get_head(), splitter.get_proof().get_root());
+        builder.print(proof_printer::print_policy::MARKED);
     } catch (std::logic_error const &e) {
         std::cout << "Proof is incorrect\n";
     }
