@@ -193,7 +193,7 @@ std::string negation::to_prefix() const {
 }
 
 std::string negation::to_infix() const {
-    return "(!" + _under->to_infix() + ")";
+    return "!" + _under->to_infix();
 }
 
 variable::variable(std::string const &name) : expression(name), _name(name) {}
@@ -374,9 +374,20 @@ unsigned int proof::find_hypothesis(e_ptr const &expr) const {
     return 0;
 }
 
+unsigned int proof::find_id(e_ptr const &expr) const {
+    auto const &key = hashable_expression(expr);
+    if (_exists.count(key)) {
+        return _exists.at(key) + 1;
+    }
+    return 0;
+}
+
 std::pair<unsigned int, unsigned int> proof::find_modus_ponens(e_ptr const &expr) const {
 #ifndef SLOW
     auto const &outer_key = hashable_expression(expr);
+    if (_mp_imp.count(outer_key) == 0) {
+        return {0, 0};
+    }
     for (unsigned int idx : _mp_imp.at(outer_key)) {
         implication *imp = i_cast(_statements[idx]->get_expression());
         auto const &key = hashable_expression(imp->get_left());
@@ -403,6 +414,20 @@ std::pair<unsigned int, unsigned int> proof::find_modus_ponens(e_ptr const &expr
 
 head const &proof::get_head() const {
     return _context;
+}
+
+head &proof::get_head() {
+    return _context;
+}
+
+unsigned int proof::add_modus_ponens(e_ptr const &expr, unsigned int id) {
+    auto parents = find_modus_ponens(expr);
+    if (parents.first != 0) {
+        add_statement(s_ptr(new modus_ponens(expr, id, (*this)[parents.first - 1], (*this)[parents.second - 1])));
+        return id;
+    } else {
+        return 0;
+    }
 }
 
 hashable_expression::hashable_expression(e_ptr const &expr) : _expr(expr) {}

@@ -24,7 +24,7 @@ s_ptr proof_scanner::parse_proof() {
                 throw std::logic_error("proof is incorrect");
             } else {
                 _proof.add_statement(expr, s_ptr(new modus_ponens(expr, line_number,
-                                                         _proof[mp.first - 1], _proof[mp.second - 1])));
+                                                                  _proof[mp.first - 1], _proof[mp.second - 1])));
             }
         }
     }
@@ -66,6 +66,8 @@ unsigned int proof_scanner::is_axiom(e_ptr const &expr) {
         implication *iright = i_cast(right);
         if (iright->get_right()->equals(left)) {
             return 1;
+        } else if (iright->get_left()->equals(e_ptr(new negation(left)))) {
+            return 11;
         } else {
             if (iright->get_right()->equals(e_ptr(new conjunction(left, iright->get_left())))) {
                 return 3;

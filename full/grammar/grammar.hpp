@@ -322,10 +322,14 @@ public:
     s_ptr get_root() const;
     s_ptr operator[](unsigned int) const;
     head const &get_head() const;
+    head &get_head();
     unsigned int length() const;
 
     unsigned int find_hypothesis(e_ptr const &) const;
+    unsigned int find_id(e_ptr const &) const;
     std::pair<unsigned int, unsigned int> find_modus_ponens(e_ptr const &expr) const;
+
+    unsigned int add_modus_ponens(e_ptr const &, unsigned int);
 
 private:
     head _context;

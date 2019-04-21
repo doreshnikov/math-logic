@@ -1,4 +1,4 @@
-CXXFLAGS+=-std=c++17 -O3
+CXXFLAGS+=-std=c++17
 CXX=g++
 
 fgrammar=grammar/grammar.hpp grammar/grammar.cpp
@@ -22,12 +22,10 @@ out/tparse: $(fgrammar) $(fhash) $(fparser) parse.cpp
 out/tminimize: $(fgrammar) $(fhash) $(fparser) $(fproof) minimize.cpp
 	$(CXX) $^ $(CXXFLAGS) -o executable/minimize
 
-out/tminimizelocal: $(fgrammar) $(fhash) $(fparser) $(fproof) minimize.cpp
-	$(CXX) $^ -DLOCAL $(CXXFLAGS) -o executable/minimize
+out/ttheorem: $(fgrammar) $(fhash) $(fparser) $(fproof) proof/proof_translators.hpp theorem.cpp
+	$(CXX) $^ -$(CXXFLAGS) -o executable/theorem
 
-all: out out/tparse out/tminimize
-
-locall: out out/tminimizelocal
+all: out out/ttheorem
 
 run:
-	./executable/minimize
+	./executable/theorem
