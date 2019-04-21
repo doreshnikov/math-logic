@@ -7,14 +7,14 @@ fparser=parser/parser.hpp parser/parser.cpp
 fproof=proof/proof_utils.hpp proof/proof_utils.cpp
 
 pack: $(fgrammar) $(fhash) $(fparser) $(fproof) minimize.cpp parse.cpp
-	zip minimize.zip -r .
+	zip all.zip -r .
 
 out:
 	mkdir -p executable
 
 clean:
 	rm -rf executable
-	rm -f minimize.zip
+	rm -f all.zip
 
 out/tparse: $(fgrammar) $(fhash) $(fparser) parse.cpp
 	$(CXX) $^ $(CXXFLAGS) -o executable/parse
@@ -22,7 +22,12 @@ out/tparse: $(fgrammar) $(fhash) $(fparser) parse.cpp
 out/tminimize: $(fgrammar) $(fhash) $(fparser) $(fproof) minimize.cpp
 	$(CXX) $^ $(CXXFLAGS) -o executable/minimize
 
+out/tminimizelocal: $(fgrammar) $(fhash) $(fparser) $(fproof) minimize.cpp
+	$(CXX) $^ -DLOCAL $(CXXFLAGS) -o executable/minimize
+
 all: out out/tparse out/tminimize
+
+locall: out out/tminimizelocal
 
 run:
 	./executable/minimize

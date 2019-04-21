@@ -11,12 +11,12 @@ public:
     s_ptr parse_proof();
     head const &get_head();
 
+    static unsigned int is_axiom(e_ptr const &);
+
 private:
     proof _proof;
 
     std::string _line;
-
-    unsigned int is_axiom(e_ptr const &);
 
     void parse_head();
     void get_line();

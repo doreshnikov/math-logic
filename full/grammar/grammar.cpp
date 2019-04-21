@@ -114,12 +114,20 @@ bool expression::operator==(expression const &other) const {
     return _hash == other._hash;
 }
 
-std::string bi_expression::to_prefix() const {
-    return '(' + _s.to_string() + ',' + _left->to_prefix() + ',' + _right->to_prefix() + ')';
+void expression::print(std::string const &endl = "\n") const {
+    std::cout << to_infix() << endl;
 }
 
 bi_expression::bi_expression(sign_t const &s, e_ptr const &left, e_ptr const &right) :
     expression(sign::to_string(s), left->_hash, right->_hash), _s(s), _left(left), _right(right) {}
+
+std::string bi_expression::to_prefix() const {
+    return '(' + _s.to_string() + ',' + _left->to_prefix() + ',' + _right->to_prefix() + ')';
+}
+
+std::string bi_expression::to_infix() const {
+    return '(' + _left->to_infix() + _s.to_string() + _right->to_infix() + ')';
+}
 
 implication::implication(e_ptr const &left, e_ptr const &right) :
     bi_expression(sign_t::Implication, left, right) {}
@@ -180,9 +188,17 @@ std::string negation::to_prefix() const {
     return "(!" + _under->to_prefix() + ")";
 }
 
+std::string negation::to_infix() const {
+    return "(!" + _under->to_infix() + ")";
+}
+
 variable::variable(std::string const &name) : expression(name), _name(name) {}
 
 std::string variable::to_prefix() const {
+    return _name;
+}
+
+std::string variable::to_infix() const {
     return _name;
 }
 
@@ -190,7 +206,7 @@ char variable::get_type() const {
     return 'v';
 }
 
-head::head(std::string const &line) : _line(line) {}
+head::head() : _result(nullptr) {}
 
 void head::add_hypothesis(e_ptr const &expr) {
     _context.emplace_back(expr);
@@ -198,6 +214,14 @@ void head::add_hypothesis(e_ptr const &expr) {
 
 void head::set_result(e_ptr const &expr) {
     _result = expr;
+}
+
+void head::print_all() const {
+    for (auto const &expr : _context) {
+        expr->print(", ");
+    }
+    std::cout << " |- ";
+    _result->print();
 }
 
 unsigned int head::size() const {
@@ -212,15 +236,11 @@ e_ptr const &head::get_result() const {
     return _result;
 }
 
-std::string const &head::get_line() const {
-    return _line;
-}
-
-statement::statement(std::string const &line, e_ptr const &expr, unsigned int id)
-    : _id(id), _line(line), _expression(expr) {}
+statement::statement(e_ptr const &expr, unsigned int id)
+    : _id(id), _expression(expr) {}
 
 void statement::print() const {
-    std::cout << _line << '\n';
+    _expression->print();
 }
 
 unsigned int statement::get_id() const {
@@ -235,8 +255,8 @@ void statement::set_id(unsigned int id) const {
     _id = id;
 }
 
-hypothesis::hypothesis(std::string const &line, e_ptr const &expr, unsigned int id, unsigned int number) :
-    statement(line, expr, id), _number(number) {}
+hypothesis::hypothesis(e_ptr const &expr, unsigned int id, unsigned int number) :
+    statement(expr, id), _number(number) {}
 
 void hypothesis::print() const {
     std::cout << "[" << _id << ". Hypothesis " << _number << "] ";
@@ -251,8 +271,8 @@ char hypothesis::get_type() const {
     return 'h';
 }
 
-axiom::axiom(std::string const &line, e_ptr const &expr, unsigned int id, unsigned int number) :
-    statement(line, expr, id), _number(number) {}
+axiom::axiom(e_ptr const &expr, unsigned int id, unsigned int number) :
+    statement(expr, id), _number(number) {}
 
 void axiom::print() const {
     std::cout << "[" << _id << ". Ax. sch. " << _number << "] ";
@@ -267,34 +287,34 @@ char axiom::get_type() const {
     return 'a';
 }
 
-deduction::deduction(std::string const &line, e_ptr const &expr, unsigned int id,
-                     std::shared_ptr<statement> const &left, std::shared_ptr<statement> const &right) :
-    statement(line, expr, id), _left(left), _right(right) {}
+modus_ponens::modus_ponens(e_ptr const &expr, unsigned int id,
+    std::shared_ptr<statement> const &left, std::shared_ptr<statement> const &right) :
+    statement(expr, id), _left(left), _right(right) {}
 
-void deduction::print() const {
+void modus_ponens::print() const {
     std::cout << "[" << _id << ". M.P. " << _right->get_id() << ", " << _left->get_id() << "] ";
     statement::print();
 }
 
-void deduction::walk(statement_collector &collector) {
+void modus_ponens::walk(statement_collector &collector) {
     _left->walk(collector);
     _right->walk(collector);
     collector.add_statement(this);
 }
 
-char deduction::get_type() const {
+char modus_ponens::get_type() const {
     return 'd';
 }
 
-s_ptr deduction::get_left() const {
+s_ptr modus_ponens::get_left() const {
     return _left;
 }
 
-s_ptr deduction::get_right() const {
+s_ptr modus_ponens::get_right() const {
     return _right;
 }
 
-proof::proof() : _context("") {}
+proof::proof() : _context() {}
 
 void proof::set_head(head const &context) {
     _context = context;
@@ -313,12 +333,20 @@ void proof::add_statement(e_ptr const &expr, s_ptr const &stat) {
     }
 }
 
-s_ptr proof::get_root() {
+void proof::add_statement(s_ptr const &stat) {
+    add_statement(stat->get_expression(), stat);
+}
+
+s_ptr proof::get_root() const {
     return _statements.back();
 }
 
 s_ptr proof::operator[](unsigned int i) const {
     return _statements.at(i);
+}
+
+unsigned int proof::length() const {
+    return _statements.size();
 }
 
 unsigned int proof::find_hypothesis(e_ptr const &expr) {
@@ -330,7 +358,7 @@ unsigned int proof::find_hypothesis(e_ptr const &expr) {
     return 0;
 }
 
-std::pair<unsigned int, unsigned int> proof::find_deduction(e_ptr const &expr) {
+std::pair<unsigned int, unsigned int> proof::find_modus_ponens(e_ptr const &expr) {
 #ifndef SLOW
     auto const &outer_key = hashable_expression(expr);
     for (unsigned int idx : _mp_imp[outer_key]) {
@@ -357,7 +385,7 @@ std::pair<unsigned int, unsigned int> proof::find_deduction(e_ptr const &expr) {
     return {0, 0};
 }
 
-head const &proof::get_head() {
+head const &proof::get_head() const {
     return _context;
 }
 

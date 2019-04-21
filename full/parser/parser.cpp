@@ -13,7 +13,7 @@ e_ptr parser::parse_expression() {
 }
 
 head parser::parse_context() {
-    head c(_target);
+    head c;
     next_token();
     if (_sign_token != sign_t::Turnstile) {
         revert();

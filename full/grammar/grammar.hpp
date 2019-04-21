@@ -76,7 +76,10 @@ public:
     virtual bool equals(e_ptr const &) const;
 
     virtual std::string to_prefix() const = 0;
+    virtual std::string to_infix() const = 0;
     virtual char get_type() const = 0;
+
+    void print(std::string const &endl) const;
 
     expression_hash _hash;
 
@@ -89,6 +92,7 @@ protected:
 class bi_expression : public expression {
 public:
     std::string to_prefix() const override;
+    std::string to_infix() const override;
 
 protected:
     bi_expression(sign_t const &s, e_ptr const &left, e_ptr const &right);
@@ -130,6 +134,8 @@ public:
     negation(e_ptr const &under);
 
     std::string to_prefix() const override;
+    std::string to_infix() const override;
+
     char get_type() const override;
     e_ptr const &get_under() const;
 
@@ -142,6 +148,8 @@ public:
     variable(std::string const &);
 
     std::string to_prefix() const override;
+    std::string to_infix() const override;
+
     char get_type() const override;
 private:
     std::string _name;
@@ -165,11 +173,13 @@ inline negation *n_cast(e_ptr const &expr) {
 
 class head {
 public:
-    head(std::string const &);
+    head();
     head(head const &) = default;
 
     void add_hypothesis(e_ptr const &);
     void set_result(e_ptr const &);
+
+    void print_all() const;
 
     unsigned int size() const;
     e_ptr operator[](unsigned int) const;
@@ -179,7 +189,6 @@ public:
 private:
     std::vector<e_ptr> _context;
     e_ptr _result;
-    std::string _line;
 };
 
 class statement;
@@ -200,7 +209,7 @@ private:
 
 class statement {
 public:
-    statement(std::string const &, e_ptr const &, unsigned int);
+    statement(e_ptr const &, unsigned int);
     statement(statement const &) = default;
     virtual ~statement() {};
 
@@ -214,13 +223,12 @@ public:
 
 protected:
     mutable unsigned int _id;
-    std::string _line;
     e_ptr _expression;
 };
 
 class hypothesis : public statement {
 public:
-    hypothesis(std::string const &, e_ptr const &, unsigned int, unsigned int);
+    hypothesis(e_ptr const &, unsigned int, unsigned int);
     ~hypothesis() = default;
 
     void print() const override;
@@ -233,7 +241,7 @@ private:
 
 class axiom : public statement {
 public:
-    axiom(std::string const &, e_ptr const &, unsigned int, unsigned int);
+    axiom(e_ptr const &, unsigned int, unsigned int);
     ~axiom() = default;
 
     void print() const override;
@@ -244,10 +252,10 @@ private:
     unsigned int _number;
 };
 
-class deduction : public statement {
+class modus_ponens : public statement {
 public:
-    deduction(std::string const &, e_ptr const &, unsigned int, s_ptr const &, s_ptr const &);
-    ~deduction() = default;
+    modus_ponens(e_ptr const &, unsigned int, s_ptr const &, s_ptr const &);
+    ~modus_ponens() = default;
 
     void print() const override;
     void walk(statement_collector &) override;
@@ -261,8 +269,8 @@ private:
     s_ptr _right;
 };
 
-inline deduction *mp_cast(s_ptr const stat) {
-    return reinterpret_cast<deduction *>(stat.get());
+inline modus_ponens *mp_cast(s_ptr const stat) {
+    return reinterpret_cast<modus_ponens *>(stat.get());
 }
 
 struct hashable_expression {
@@ -292,13 +300,15 @@ public:
 
     void set_head(head const &);
     void add_statement(e_ptr const &, s_ptr const &);
+    void add_statement(s_ptr const &);
 
-    s_ptr get_root();
+    s_ptr get_root() const;
     s_ptr operator[](unsigned int) const;
-    head const &get_head();
+    head const &get_head() const;
+    unsigned int length() const;
 
     unsigned int find_hypothesis(e_ptr const &);
-    std::pair<unsigned int, unsigned int> find_deduction(e_ptr const &);
+    std::pair<unsigned int, unsigned int> find_modus_ponens(e_ptr const &expr);
 
 private:
     head _context;

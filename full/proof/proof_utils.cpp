@@ -15,15 +15,15 @@ s_ptr proof_splitter::parse_proof() {
         }
         unsigned int number;
         if ((number = _proof.find_hypothesis(expr))) {
-            _proof.add_statement(expr, s_ptr(new hypothesis(_line, expr, line_number, number)));
+            _proof.add_statement(expr, s_ptr(new hypothesis(expr, line_number, number)));
         } else if ((number = is_axiom(expr))) {
-            _proof.add_statement(expr, s_ptr(new axiom(_line, expr, line_number, number)));
+            _proof.add_statement(expr, s_ptr(new axiom(expr, line_number, number)));
         } else {
-            std::pair<unsigned int, unsigned int> mp = _proof.find_deduction(expr);
+            std::pair<unsigned int, unsigned int> mp = _proof.find_modus_ponens(expr);
             if (mp.first == 0) {
                 throw std::logic_error("proof is incorrect");
             } else {
-                _proof.add_statement(expr, s_ptr(new deduction(_line, expr, line_number,
+                _proof.add_statement(expr, s_ptr(new modus_ponens(expr, line_number,
                                                          _proof[mp.first - 1], _proof[mp.second - 1])));
             }
         }
@@ -125,7 +125,7 @@ head const &proof_splitter::get_head() {
 proof_builder::proof_builder(head const &context, s_ptr const &root) : _context(context), _root(root) {}
 
 void proof_builder::print() {
-    std::cout << _context.get_line() << '\n';
+    _context.print_all();
     statement_collector collector;
     _root->walk(collector);
     collector.print_all();
