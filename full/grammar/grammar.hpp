@@ -80,6 +80,8 @@ public:
     virtual char get_type() const = 0;
     virtual bool compute(std::unordered_map<std::string, bool> const &) const = 0;
 
+    virtual void collect_variable_names(std::vector<std::string> &) const = 0;
+
     void print(std::string const &endl) const;
 
     expression_hash _hash;
@@ -94,6 +96,8 @@ class bi_expression : public expression {
 public:
     std::string to_prefix() const override;
     std::string to_infix() const override;
+
+    void collect_variable_names(std::vector<std::string> &) const override;
 
 protected:
     bi_expression(sign_t const &s, e_ptr const &left, e_ptr const &right);

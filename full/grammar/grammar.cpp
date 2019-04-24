@@ -132,6 +132,9 @@ std::string bi_expression::to_prefix() const {
 std::string bi_expression::to_infix() const {
     return '(' + _left->to_infix() + " " + _s.to_string() + " " + _right->to_infix() + ')';
 }
+void bi_expression::collect_variable_names(std::vector<std::string> &) const {
+
+}
 
 implication::implication(e_ptr const &left, e_ptr const &right) :
     bi_expression(sign_t::Implication, left, right) {}
