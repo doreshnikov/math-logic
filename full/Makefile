@@ -23,11 +23,12 @@ out/tminimize: $(fgrammar) $(fhash) $(fparser) $(fproof) minimize.cpp
 	$(CXX) $^ $(CXXFLAGS) -o executable/minimize
 
 out/tintuitionistic: $(fgrammar) $(fhash) $(fparser) $(fproof) proof/proof_translator.hpp intuitionistic.cpp
-	$(CXX) $^ -$(CXXFLAGS) -o executable/intuitionistic
+	$(CXX) $^ $(CXXFLAGS) -o executable/intuitionistic
 
-out/tprove: ${fgrammae} ${fhash} ${fparser} ${fproof} proof/proof_creator.hpp prove.cpp
+out/tprove: $(fgrammar) $(fhash) $(fparser) $(fproof) proof/proof_translator.hpp proof/proof_creator.hpp prove.cpp
+	$(CXX) $^ $(CXXFLAGS) -o executable/prove
 
-all: out out/tintuitionistic
+all: out out/tprove
 
 run:
-	./executable/intuitionistic
+	./executable/prove

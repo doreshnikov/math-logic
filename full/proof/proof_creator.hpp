@@ -327,13 +327,53 @@ namespace translators {
         }
     }
 
-    static inline void try_prove(e_ptr const &expr) {
-        for (unsigned int mask = 0; mask < 8; mask++) {
+    static inline proof merge_proofs(proof const &p1, proof const &p2, e_ptr const &var) {
+        e_ptr result = p1.get_head().get_result();
+
+        proof d1 = to_deduction(p1, var);
+        unsigned int id = d1.length();
+        add_contraposition(d1, var, result, id);
+
+        e_ptr nvar(new negation(var));
+        proof d2 = to_deduction(p2, nvar);
+        for (unsigned int i = 0; i < d2.length(); i++) {
+            e_ptr expr = d2[i]->get_expression();
+            if (d2[i]->get_type() == 'a') {
+                d1.add_axiom(expr, id++, a_cast(d2[i])->get_number());
+            } else if (d2[i]->get_type() == 'd') {
+                d1.add_modus_ponens(expr, id++);
+            } else {
+                d1.add_hypothesis(expr, id++);
+            }
+        }
+        add_contraposition(d1, nvar, result, id);
+
+        e_ptr ax = produce_axiom(9, e_ptr(new negation(result)), nvar);
+        d1.add_axiom(ax, id++, 9);
+        e_ptr r = i_cast(ax)->get_right();
+        d1.add_modus_ponens(r, id++);
+        d1.add_modus_ponens(i_cast(r)->get_right(), id++);
+
+        d1.add_axiom(produce_axiom(10, result), id++, 10);
+        d1.add_modus_ponens(result, id++);
+        d1.get_head().set_result(p1.get_head().get_result());
+        return d1;
+    }
+
+    static inline proof try_prove(e_ptr const &expr) {
+        std::unordered_set<std::string> names_set;
+        expr->collect_variable_names(names_set);
+        std::vector<std::string> names;
+        std::copy(names_set.begin(), names_set.end(), std::back_inserter(names));
+
+        std::vector<std::vector<proof>> proofs(1u << names.size(), std::vector<proof>(1u << names.size()));
+        unsigned int all = (1u << names.size()) - 1;
+        for (unsigned int mask = 0; mask < (1u << names.size()); mask++) {
             proof target;
             head context;
-            for (unsigned int i = 0; i < 3; i++) {
-                e_ptr v(new variable(std::string(1, 'A' + i)));
-                context.add_hypothesis((mask & (1 << i)) == 0 ? e_ptr(new negation(v)) : v);
+            for (unsigned int i = 0; i < names.size(); i++) {
+                e_ptr v(new variable(names[i]));
+                context.add_hypothesis((mask & (1u << i)) == 0 ? e_ptr(new negation(v)) : v);
             }
             bool value = expr->compute(context.to_map());
             context.set_result(value ? expr : e_ptr(new negation(expr)));
@@ -341,12 +381,64 @@ namespace translators {
 
             unsigned int id = 0;
             prove_equals_self(target, expr, id);
-            proof_printer(target.get_head(), target.get_root()).print(proof_printer::print_policy::MARKED);
-//            target.get_head().print_all();
-//            for (unsigned int i = 0; i < target.length(); i++) {
-//                target[i]->print();
-//            }
-            std::cout << std::endl;
+            proofs[all][mask] = target;
+        }
+
+        unsigned int pos_mask = all + 1, pos_bits = names.size() + 1;
+        unsigned int neg_mask = all + 1, neg_bits = names.size() + 1;
+        for (int pmask = all; pmask >= 0; pmask--) {
+            std::vector<unsigned int> bits;
+            for (unsigned int i = 0; i < names.size(); i++) {
+                if ((pmask & (1u << i)) != 0) {
+                    bits.push_back(i);
+                }
+            }
+            if (bits.size() < pos_bits) {
+                if (proofs[pmask][pmask].length() != 0 &&
+                    proofs[pmask][pmask].get_root()->get_expression()->equals(expr)) {
+                    pos_bits = bits.size();
+                    pos_mask = pmask;
+                }
+            }
+            if (bits.size() < neg_bits) {
+                if (proofs[pmask][0].length() != 0 &&
+                    !proofs[pmask][0].get_root()->get_expression()->equals(expr)) {
+                    neg_bits = bits.size();
+                    neg_mask = pmask;
+                }
+            }
+            for (unsigned int mask = 0; mask <= pmask; mask++) {
+                if ((pmask & mask) != mask) {
+                    continue;
+                }
+                for (unsigned int i : bits) {
+                    unsigned int id = 1u << i;
+                    if (proofs[pmask][mask].length() != 0 && proofs[pmask][mask ^ id].length() != 0
+                        && proofs[pmask][mask].get_root()->get_expression()->equals(
+                            proofs[pmask][mask ^ id].get_root()->get_expression())) {
+                        e_ptr var(new variable(names[i]));
+                        if (proofs[pmask][mask].find_hypothesis(var) != 0) {
+                            proofs[pmask ^ id][mask & (all ^ id)] =
+                                merge_proofs(proofs[pmask][mask],
+                                             proofs[pmask][mask ^ id],
+                                             e_ptr(new variable(names[i])));
+                        } else {
+                            proofs[pmask ^ id][mask & (all ^ id)] =
+                                merge_proofs(proofs[pmask][mask ^ id],
+                                             proofs[pmask][mask],
+                                             e_ptr(new variable(names[i])));
+                        }
+                    }
+                }
+            }
+        }
+
+        if (pos_mask != all + 1) {
+            return proofs[pos_mask][pos_mask];
+        } else if (neg_mask != all + 1) {
+            return proofs[neg_mask][0];
+        } else {
+            return proof();
         }
     }
 

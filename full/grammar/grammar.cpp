@@ -132,8 +132,10 @@ std::string bi_expression::to_prefix() const {
 std::string bi_expression::to_infix() const {
     return '(' + _left->to_infix() + " " + _s.to_string() + " " + _right->to_infix() + ')';
 }
-void bi_expression::collect_variable_names(std::vector<std::string> &) const {
 
+void bi_expression::collect_variable_names(std::unordered_set<std::string> &names) const {
+    _left->collect_variable_names(names);
+    _right->collect_variable_names(names);
 }
 
 implication::implication(e_ptr const &left, e_ptr const &right) :
@@ -215,6 +217,10 @@ bool negation::compute(std::unordered_map<std::string, bool> const &values) cons
     return !_under->compute(values);
 }
 
+void negation::collect_variable_names(std::unordered_set<std::string> &names) const {
+    _under->collect_variable_names(names);
+}
+
 variable::variable(std::string const &name) : expression(name), _name(name) {}
 
 std::string variable::to_prefix() const {
@@ -231,6 +237,10 @@ char variable::get_type() const {
 
 bool variable::compute(std::unordered_map<std::string, bool> const &values) const {
     return values.at(_name);
+}
+
+void variable::collect_variable_names(std::unordered_set<std::string> &names) const {
+    names.insert(_name);
 }
 
 head::head() : _result(nullptr) {}

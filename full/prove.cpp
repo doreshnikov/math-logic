@@ -12,38 +12,20 @@ int main() {
     std::cout.tie(nullptr);
 
 #ifdef LOCAL
-//    freopen("_output.txt", "w", stdout);
-
-    for (int n1 = 1; n1 < 2; n1++) {
-        for (int n2 = 1; n2 < 2; n2++) {
-            proof res;
-
-            res = translators::prove_disjunction(e_ptr(new variable("A")), e_ptr(new variable("B")), n1, n2);
-            proof_printer(res.get_head(), res.get_root()).print(proof_printer::print_policy::MARKED);
-            std::cout << std::endl;
-
-            res = translators::prove_conjunction(e_ptr(new variable("A")), e_ptr(new variable("B")), n1, n2);
-            proof_printer(res.get_head(), res.get_root()).print(proof_printer::print_policy::MARKED);
-            std::cout << std::endl;
-
-            res = translators::prove_implication(e_ptr(new variable("A")), e_ptr(new variable("B")), n1, n2);
-            proof_printer(res.get_head(), res.get_root()).print(proof_printer::print_policy::MARKED);
-            std::cout << std::endl;
-        }
-
-        proof res = translators::prove_negation(e_ptr(new variable("A")), n1);
-        proof_printer(res.get_head(), res.get_root()).print(proof_printer::print_policy::MARKED);
-        std::cout << std::endl;
-    }
-
     freopen("_input.txt", "r", stdin);
     freopen("_output.txt", "w", stdout);
-
-    std::string line;
-    std::cin >> line;
-    translators::try_prove(parser(line).parse_expression());
-
 #endif
 
+    std::string line;
+    std::getline(std::cin, line);
+    proof result = translators::prove_disjunction(e_ptr(new variable("A")), e_ptr(new variable("B")), 1, 1);
+        proof_printer(result.get_head(), result.get_root()).print(proof_printer::print_policy::UNMARKED);
+
+//    proof result = translators::try_prove(parser(line).parse_expression());
+//    if (result.length() == 0) {
+//        std::cout << ":(" << std::endl;
+//    } else {
+//        proof_printer(result.get_head(), result.get_root()).print(proof_printer::print_policy::UNMARKED);
+//    }
 
 }
