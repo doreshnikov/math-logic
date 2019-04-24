@@ -94,8 +94,7 @@ unsigned int proof_scanner::is_axiom(e_ptr const &expr) {
                     return 2;
                 }
                 if (ileft->get_right()->equals(imid->get_right()) && ileft->get_right()->equals(iright->get_right())
-                    &&
-                        iright->get_left()->equals(e_ptr(new disjunction(ileft->get_left(), imid->get_left())))) {
+                    && iright->get_left()->equals(e_ptr(new disjunction(ileft->get_left(), imid->get_left())))) {
                     return 8;
                 }
             }

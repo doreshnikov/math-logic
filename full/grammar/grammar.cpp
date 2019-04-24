@@ -148,6 +148,10 @@ e_ptr const &implication::get_right() const {
     return _right;
 }
 
+bool implication::compute(std::unordered_map<std::string, bool> const &values) const {
+    return !_left->compute(values) || _right->compute(values);
+}
+
 conjunction::conjunction(e_ptr const &left, e_ptr const &right) :
     bi_expression(sign_t::Conjunction, left, right) {}
 
@@ -163,6 +167,10 @@ e_ptr const &conjunction::get_right() const {
     return _right;
 }
 
+bool conjunction::compute(std::unordered_map<std::string, bool> const &values) const {
+    return _left->compute(values) && _right->compute(values);
+}
+
 disjunction::disjunction(e_ptr const &left, e_ptr const &right) :
     bi_expression(sign_t::Disjunction, left, right) {}
 
@@ -176,6 +184,10 @@ e_ptr const &disjunction::get_left() const {
 
 e_ptr const &disjunction::get_right() const {
     return _right;
+}
+
+bool disjunction::compute(std::unordered_map<std::string, bool> const &values) const {
+    return _left->compute(values) || _right->compute(values);
 }
 
 negation::negation(e_ptr const &under) : expression(sign::to_string(sign_t::Negation), under->_hash), _under(under) {}
@@ -196,6 +208,10 @@ std::string negation::to_infix() const {
     return "!" + _under->to_infix();
 }
 
+bool negation::compute(std::unordered_map<std::string, bool> const &values) const {
+    return !_under->compute(values);
+}
+
 variable::variable(std::string const &name) : expression(name), _name(name) {}
 
 std::string variable::to_prefix() const {
@@ -208,6 +224,10 @@ std::string variable::to_infix() const {
 
 char variable::get_type() const {
     return 'v';
+}
+
+bool variable::compute(std::unordered_map<std::string, bool> const &values) const {
+    return values.at(_name);
 }
 
 head::head() : _result(nullptr) {}
@@ -242,6 +262,21 @@ e_ptr const &head::get_result() const {
 
 unsigned int head::length() const {
     return _context.size();
+}
+
+std::unordered_map<std::string, bool> head::to_map() const {
+    std::unordered_map<std::string, bool> mapper;
+    for (unsigned int i = 0; i < _context.size(); i++) {
+        if (_context[i]->get_type() == 'v') {
+            mapper.insert({_context[i]->to_infix(), true});
+        } else if (_context[i]->get_type() == 'n') {
+            e_ptr u = n_cast(_context[i])->get_under();
+            if (u->get_type() == 'v') {
+                mapper.insert({u->to_infix(), false});
+            }
+        }
+    }
+    return mapper;
 }
 
 statement::statement(e_ptr const &expr, unsigned int id)

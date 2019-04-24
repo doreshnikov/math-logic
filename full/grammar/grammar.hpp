@@ -78,6 +78,7 @@ public:
     virtual std::string to_prefix() const = 0;
     virtual std::string to_infix() const = 0;
     virtual char get_type() const = 0;
+    virtual bool compute(std::unordered_map<std::string, bool> const &) const = 0;
 
     void print(std::string const &endl) const;
 
@@ -109,6 +110,8 @@ public:
     char get_type() const override;
     e_ptr const &get_left() const;
     e_ptr const &get_right() const;
+
+    bool compute(std::unordered_map<std::string, bool> const &) const override;
 };
 
 class conjunction : public bi_expression {
@@ -118,6 +121,8 @@ public:
     char get_type() const override;
     e_ptr const &get_left() const;
     e_ptr const &get_right() const;
+
+    bool compute(std::unordered_map<std::string, bool> const &) const override;
 };
 
 class disjunction : public bi_expression {
@@ -127,6 +132,8 @@ public:
     char get_type() const override;
     e_ptr const &get_left() const;
     e_ptr const &get_right() const;
+
+    bool compute(std::unordered_map<std::string, bool> const &) const override;
 };
 
 class negation : public expression {
@@ -138,6 +145,8 @@ public:
 
     char get_type() const override;
     e_ptr const &get_under() const;
+
+    bool compute(std::unordered_map<std::string, bool> const &) const override;
 
 private:
     e_ptr _under;
@@ -151,6 +160,9 @@ public:
     std::string to_infix() const override;
 
     char get_type() const override;
+
+    bool compute(std::unordered_map<std::string, bool> const &) const override;
+
 private:
     std::string _name;
 };
@@ -171,6 +183,10 @@ inline negation *n_cast(e_ptr const &expr) {
     return reinterpret_cast<negation *>(expr.get());
 }
 
+inline variable *v_cast(e_ptr const &expr) {
+    return reinterpret_cast<variable *>(expr.get());
+}
+
 class head {
 public:
     head();
@@ -181,6 +197,8 @@ public:
 
     void print_all() const;
     unsigned int length() const;
+
+    std::unordered_map<std::string, bool> to_map() const;
 
     unsigned int size() const;
     e_ptr operator[](unsigned int) const;
