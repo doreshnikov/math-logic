@@ -316,7 +316,9 @@ public:
     ~proof() = default;
 
     void set_head(head const &);
+    // TODO deprecated
     void add_statement(e_ptr const &, s_ptr const &);
+    // TODO also deprecated
     void add_statement(s_ptr const &);
 
     s_ptr get_root() const;
@@ -329,6 +331,8 @@ public:
     unsigned int find_id(e_ptr const &) const;
     std::pair<unsigned int, unsigned int> find_modus_ponens(e_ptr const &expr) const;
 
+    void add_axiom(e_ptr const &, unsigned int, unsigned int);
+    unsigned int add_hypothesis(e_ptr const &, unsigned int);
     unsigned int add_modus_ponens(e_ptr const &, unsigned int);
 
 private:

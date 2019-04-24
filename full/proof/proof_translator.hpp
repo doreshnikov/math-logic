@@ -4,9 +4,16 @@
 #include <vector>
 
 #include "../grammar/grammar.hpp"
-#include "proof_utils.hpp"
 
 namespace translators {
+
+    static inline e_ptr produce_axiom(unsigned int ax, e_ptr const &e1) {
+        if (ax == 10) {
+            return e_ptr(new implication(e_ptr(new negation(e_ptr(new negation(e1)))), e1));
+        } else {
+            return nullptr;
+        }
+    }
 
     static inline e_ptr produce_axiom(unsigned int ax, e_ptr const &e1, e_ptr const &e2) {
         if (ax == 1) {
@@ -94,7 +101,6 @@ namespace translators {
             e_ptr expr = stat->get_expression();
             e_ptr corr = e_ptr(new implication(hyp, expr));
 
-            unsigned int index = target.length();
             if (stat->get_type() == 'a' || stat->get_type() == 'h') {
                 if (stat->get_type() == 'h' && expr->equals(hyp)) {
                     add_identity(target, hyp, id);

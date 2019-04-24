@@ -1,6 +1,6 @@
 #include <iostream>
 #include "proof/proof_utils.hpp"
-#include "proof/proof_translators.hpp"
+#include "proof/proof_translator.hpp"
 
 using namespace std;
 
@@ -15,13 +15,9 @@ int main() {
     freopen("_output.txt", "w", stdout);
 #endif
 
-    proof_scanner splitter;
-    splitter.parse_proof();
-    proof target = translators::to_intuitionistic(splitter.get_proof());
-//    target.get_head().print_all();
-//    for (unsigned int i = 0; i < target.length(); i++) {
-//        target[i]->get_expression()->print("\n");
-//    }
+    proof_scanner scanner;
+    scanner.parse_proof();
+    proof target = translators::to_intuitionistic(scanner.get_proof());
     proof_printer(target.get_head(), target.get_root()).print(proof_printer::print_policy::UNMARKED);
 
 }

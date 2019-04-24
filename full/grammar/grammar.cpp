@@ -420,6 +420,20 @@ head &proof::get_head() {
     return _context;
 }
 
+void proof::add_axiom(e_ptr const &expr, unsigned int id, unsigned int num) {
+    add_statement(s_ptr(new axiom(expr, id, num)));
+}
+
+unsigned int proof::add_hypothesis(e_ptr const &expr, unsigned int id) {
+    auto num = find_hypothesis(expr);
+    if (num != 0) {
+        add_statement(s_ptr(new hypothesis(expr, id, num)));
+        return id;
+    } else {
+        return 0;
+    }
+}
+
 unsigned int proof::add_modus_ponens(e_ptr const &expr, unsigned int id) {
     auto parents = find_modus_ponens(expr);
     if (parents.first != 0) {
